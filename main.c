@@ -39,6 +39,7 @@ typedef struct list3 {
 #define MALLOC(t)    (t*) malloc(sizeof(t))
 
 float auxForCumulated=0;
+float sizesCumulated = 0;
 
 /*
 	Função que apresenta as opções do menu
@@ -66,8 +67,11 @@ void listWords(WordsList *lst)
 }
 
 
-
-
+/* 
+	Função de Listar valores da Lista de Frequências
+	- Assumo que caso não haja lista é pq não foi calculada ainda (utilizador não selecionou opção)
+	- Apresenta c/ Tabelização
+*/
 void list_frequencies(ThirdRowWords* fList)
 {
 	if(!fList){
@@ -86,8 +90,10 @@ void list_frequencies(ThirdRowWords* fList)
 
 
 /*
-Inserção na lista de palavras
-Abordagem Iterativa
+	Inserção de Palavras na Lista
+	- Abordagem Iterativa
+	- Percorre a lista e adiciona à Cauda
+	Chamada pela: useWordsList
  */
 WordsList * insertInWordList( WordsList* lst, char original[15], char root[15], char analise[5], float accuraty)
 {
@@ -128,13 +134,26 @@ int getSizeOfList(ThirdRowWords* lst)
     return size;
 }
 
+/* Get Size of list das wordsizes / f.Relativas */
+int getWordListSize ( WordSizeList * lst)
+{
+	int total = 0;
+	WordSizeList * myaux;
+	for(myaux = lst; myaux; myaux=myaux->next)
+	{
+		total = total + myaux->fAbsolute;
+	}
+
+	return total;
+}
+
+
 /*
 	Calcular Frequência Relativa de cada palavra na lista de Palavras
 */
-
 void CalcRelativeFrequencies( ThirdRowWords *FrequencyList, int size)
 {
-	printf("Calculando Freqûencias Relativas\n");
+	printf("Calculando Frequências Relativas\n");
 	ThirdRowWords *aux;
 	//sum = 0;
 	for(aux = FrequencyList; aux; aux = aux->next)
@@ -146,47 +165,13 @@ void CalcRelativeFrequencies( ThirdRowWords *FrequencyList, int size)
 
 }
 
-/*
- Função de adicionar lista de Palavras uma palavra que já existe
- (basicamente aumenta 1 no valor da Fre. Absoluta)
- */
-
- void addtoFrequencyList( ThirdRowWords *lst, char *categoria) {
-	 	ThirdRowWords *aux, *new;
-		 new = (ThirdRowWords*) malloc(sizeof(ThirdRowWords));
-		 new->analysis = strdup(categoria);
-		 new->relativeFrequency = 1;
-		 //new->facumulada = 1;
-		 new->counter_absolute = 1;
-		 new->next = NULL;
-		 if(!lst)
-		 {
-			 lst = new;
-		 }
-		 else
-		 {
-		//não sei se preciso deste algoritmo
-		 for(aux = lst; aux; aux = aux->next)
-		 {
-			 if(strcmp(aux->analysis, categoria) == 0 )
-			 {
-				 printf("%s", aux->analysis);
-				aux->relativeFrequency++;
-			 }
-		 }
-
-		 }
- }
-
-
 /* 
-	Função de Associar uma categoria à lista
-
-Se não existir lista adiciona à cabeça
-Se existir lista
- - Validar se palavra já existe
-   - Se existe aumentar o relativeFrequency
-
+	Função de Associar uma categoria à lista Ligada de Categorias
+    - Se não existir lista adiciona à cabeça
+	- Se existir lista
+ 	- Validar se palavra já existe
+   	- Se existe aumenta a Freq. Absoluta
+	-Se Não existe adiciona à lsita.
 */
 ThirdRowWords * InsertIntoFrequencyList( ThirdRowWords * list, char *categoria )
 {
@@ -257,12 +242,19 @@ ThirdRowWords * ThirdColFrequencies( WordsList *mainList, ThirdRowWords * Freque
 	return FrequencyList;
 }
 
+/* 
+Função da opção 1
+	- Acede ao ficheiro words.txt
+	- Separa as palavras por espaços
+	- Insere na lista de palavras (função: insertInWordList)
+*/
 WordsList*  usewordsList( WordsList* lista)
 {
 	//não esquecer de limpar lista
 
 
 	FILE* fh = fopen("words.txt", "r");
+	//FILE* fh = fopen("words_Original.txt", "r");
 
 	if(!fh) {
 		printf("\nOcorreu um erro ao abrir o ficheiro ");
@@ -351,7 +343,7 @@ int menu(void)
 
 void List_WordSizesFrequencies( WordSizeList *lst)
 {
-	printf("Entra na listagem");
+//	printf("Entra na listagem de %ld itens", strlen(lst));
 	if(lst)
 	{
 		printf("\nListando...\n");
@@ -375,9 +367,9 @@ void List_WordSizesFrequencies( WordSizeList *lst)
 	Função de Adicionar Tamanhos de palavras à lista de frequencias de tamanhos 
 
 */
-WordSizeList * addtoWordsFrequencyList( WordSizeList * lst, int WordSize)
+WordSizeList * addtoWordsSizesFrequencyList( WordSizeList * lst, int WordSize)
 {
-	printf("Recebeu palavra c/ tamanho %d\n", WordSize);
+	printf("\nRecebeu palavra c/ tamanho %d\n", WordSize);
 
 	//aloca espaço
 	WordSizeList *aux;
@@ -391,26 +383,30 @@ WordSizeList * addtoWordsFrequencyList( WordSizeList * lst, int WordSize)
 
 	if(!lst)
 	{
+		printf("\nAdiciona ocorrência de palavra c/ %d caracteres", WordSize);
 		lst  = tmp;
 	}
 	else{
 		
 		int added = 0; 
 		
-		for( aux=lst; aux; aux = lst->next )
+		for( aux=lst; aux->next; aux = aux->next )
 		{
-			/*
+			printf("\nProcura ocorrências c/ %d caracteres", WordSize);
 				if(aux->size == WordSize)
 				{
-					printf("Encontrou %d c/ %d" , aux->size, WordSize);
+					printf("Já contém palavra c %d caracteres c/ %d" , aux->size, WordSize);
 					//Já existe palavra c/ este tamanho
 					aux->fAbsolute = aux->fAbsolute +1;
+
 					added = 1;
-					
 				}
-			*/
+			
 		}
+		if(added==0)
+		{
 			aux->next  = tmp;
+		}
 		
 	}
 	
@@ -423,8 +419,8 @@ WordSizeList * getWordsSize(WordsList * MyWordList, WordSizeList * list){
 	WordsList *aux;
 	for(aux = MyWordList; aux; aux= aux->next)
 	{
-printf("\nEncontra palavra %s, c/ %d letras\n\n",aux->nome, aux->Wordsize);
-		list = addtoWordsFrequencyList(list, aux->Wordsize);
+		//printf("\nEncontra palavra %s, c/ %d letras\n\n",aux->nome, aux->Wordsize);
+		list = addtoWordsSizesFrequencyList(list, aux->Wordsize);
 		//List_WordSizesFrequencies(list);
 	}
 
@@ -441,13 +437,76 @@ void quit()
     exit(0);
 }
 
+/* 
+	Função que calcula Frequência Relativa de cada Tamanho de palavra
+
+ */
+
+float getMedianaofList (WordSizeList * lst, float media)
+{
+	int counter;
+	for 
+}
+
+/* 
+	Função que calcula a moda da lista
+	E a Média
+*/
+
+void getMedidasofList(WordSizeList * lst )
+{
+	WordSizeList *aux;
+	int soma = 0;
+	float media;
+	int total=0;
+	int moda = 0;
+	int maior = 0;
+	for(aux = lst; aux; aux= aux->next)
+	{
+		if(aux->fAbsolute > maior)
+		{
+			moda = aux->size;
+		}
+		total = total + 1;
+		soma = soma + (aux->fAbsolute * size ) ;
+
+	}
+
+	media = soma / total;
+
+	if(moda = 0)
+	{
+		printf("Não calculou corretamente a moda\n");
+	}
+	else
+	{
+		printf("A moda é de %d\n(%d) caracteres por palavra", moda, moda);
+		printf("A média é de %f caracteres por palavra\n", media );
+
+	}
+}
+
+void WordSizesRelativeFrequencies( WordSizeList * lst, int size )
+{
+	printf("\nCalculando Frequências de tamanhos das palavras... \n");
+
+	WordSizeList *aux;
+
+	for(aux = lst; aux; aux= aux->next)
+	{
+		aux->fRelative = (float) aux->fAbsolute / size;
+		aux->fAcumulada = sizesCumulated + aux->fRelative;
+		sizesCumulated = aux->fAcumulada;
+	}
+
+}
 
 int main(void)
 {
 	WordsList* MyWordList = NULL;
 	ThirdRowWords*  FrequencyList = NULL;
 	WordSizeList * WordSizeFrequencies = NULL;
-	int choice = 6;
+	int choice = 6, size;
 
 	do {
 		choice = menu();
@@ -466,22 +525,45 @@ int main(void)
 
 				FrequencyList = ThirdColFrequencies(MyWordList,FrequencyList);
 				
-				int size = getSizeOfList(FrequencyList);
+				size = getSizeOfList(FrequencyList);
 				//printf("\nA lista tem %i categorias.", size);
 				//Depois de ter a lista c/ Frequências Absolutas vai calcular Frequência Relativa p/ cada uma das categorias
 				CalcRelativeFrequencies(FrequencyList, size);
 				//CalcCumulatedFrequencies(FrequencyList,);
-				printf("Terminou função...\n");
+				printf("\nOcorrências de Categorias das Palavras no Texto:\n");
 				//printf("\nCategoria \t F. Absoluta \t F. Relativa \t F. Acumulada \t\n");
 				list_frequencies(FrequencyList);
+				printf("\nTerminou função...\n\n");
 				break;
 			case 4:
 				WordSizeFrequencies = getWordsSize(MyWordList, WordSizeFrequencies);
+
+				size = getWordListSize(WordSizeFrequencies);
 				
-
-
-
+				WordSizesRelativeFrequencies( WordSizeFrequencies, size);
+			printf("\nOcorrências de Tamanhos das Palavras (Originais) no Text \n");
+				List_WordSizesFrequencies(WordSizeFrequencies);
+				//Criar Função q pega nos valores e calcula o desvio padrão
+				// A F. Relativa aCumulada é igual ao cumulatedForWordSizes + f_relativa 
+				//Falta calcular e apresentar o desvio padrão
 				break;
+			case 5:
+				/*
+					Calcular Média, Moda e Mediana dos Tamanhos das Palavras
+
+				*/ 
+				getMedidasofList(WordSizeFrequencies);
+				/* terminar Função da mediana
+					WordsizeFrequencies deve estar ordenada!
+					Bem como FrequencyList
+					addtoWordsSizesFrequencyList
+					Devia garantir que a lista fica criada de forma ordenada...
+				 */
+				getMedianaofList(WordSizeFrequencies);
+				getMediana(WordSizeFrequencies);
+				//Opção 5
+
+			break;
 
 		}
 
