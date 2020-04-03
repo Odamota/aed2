@@ -2,14 +2,13 @@
 Engineered by: Artur Mendes
 UC: AED II
 To: Alberto Simões & Ricardo Gonçalves
-Objective:
-By: Artur Mendes
-
 */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
+
 
 typedef struct List {
 		char *nome;
@@ -36,15 +35,12 @@ typedef struct list3 {
 		struct list3 *next;
 } WordSizeList;
 
+char filename[20];
+
 #define MALLOC(t)    (t*) malloc(sizeof(t))
 
 float auxForCumulated=0;
 float sizesCumulated = 0;
-
-/*
-	Função que apresenta as opções do menu
-*/
-
 
 void listWords(WordsList *lst)
 {
@@ -253,7 +249,7 @@ WordsList*  usewordsList( WordsList* lista)
 	//não esquecer de limpar lista
 
 
-	FILE* fh = fopen("words.txt", "r");
+	FILE* fh = fopen(filename, "r");
 	//FILE* fh = fopen("words_Original.txt", "r");
 
 	if(!fh) {
@@ -315,25 +311,45 @@ WordsList*  usewordsList( WordsList* lista)
 	return lista;
 }
 
+/* 
+Devolve o nome do ficheiro para a função aceder
+*/
+void SelectFile(void)
+{
+	printf("Introduza o nome do ficheiro que pretende usar:");
+	scanf("%s", filename);
+
+}
 
 int menu(void)
 {
     int option;
-
+	printf("\n1. Listar as palavras do ficheiro %s \n", filename);
+	//printf("\n1a.Abrir outro ficheiro (.txt) \n");
+	printf("2. Frequências das Categorias Gramaticais na lista (Crescente Abs.)\n");
+    printf("3. Frequências de tamanhos das palavras do ficheiro\n");
+    printf("4. Média e Desvio Padrão de Certezas \n");
+    printf("5. Média, moda, mediana e desvio padrão relativo ao tamanho das palavras originais\n");
+    printf("6. Calcular Quartis de frequências de palavras\n");
+	printf("7. Calcular Histograma de Probabilidades\n");
+    printf("0. Sair\n");
+/*
     printf("\n1.Abrir o ficheiro wordslist.txt \n");
 	printf("2.Apresentar lista de palavras\n");
     printf("3.Tabela de Frequências da 3ª coluna do ficheiro\n");
     printf("4.Frequências de tamanhos das palavras no texto\n");
-    printf("5.Média e Desvio padrão das palavras originais\n");
+    printf("5.Média e Desvio padrão c/ base no nº de caracteres das palavras originais\n");
     printf("6.Média, moda, mediana e desvio padrão relativo ao tamanho das palavras originais\n");
     printf("0.Sair\n");
+
+*/
     printf("Escolha uma opção: ");
 
     while( (scanf(" %d", &option) != 1)  || (option < 0) || (option > 5))
     {
       fflush(stdin); /* clear bad data from buffer */
       printf("Escolha uma opção válida.\n");
-      printf("Opção?  ");
+      printf("Opção: ");
     }
     //printf("\nSelecionou a opção %d\n", option);
     return option;
@@ -369,7 +385,7 @@ void List_WordSizesFrequencies( WordSizeList *lst)
 */
 WordSizeList * addtoWordsSizesFrequencyList( WordSizeList * lst, int WordSize)
 {
-	printf("\nRecebeu palavra c/ tamanho %d\n", WordSize);
+	//printf("\nRecebeu palavra c/ tamanho %d\n", WordSize);
 
 	//aloca espaço
 	WordSizeList *aux;
@@ -383,7 +399,7 @@ WordSizeList * addtoWordsSizesFrequencyList( WordSizeList * lst, int WordSize)
 
 	if(!lst)
 	{
-		printf("\nAdiciona ocorrência de palavra c/ %d caracteres", WordSize);
+		//printf("\nAdiciona ocorrência de palavra c/ %d caracteres", WordSize);
 		lst  = tmp;
 	}
 	else{
@@ -392,22 +408,18 @@ WordSizeList * addtoWordsSizesFrequencyList( WordSizeList * lst, int WordSize)
 		
 		for( aux=lst; aux->next; aux = aux->next )
 		{
-			printf("\nProcura ocorrências c/ %d caracteres", WordSize);
+			//printf("\nProcura ocorrências c/ %d caracteres", WordSize);
 				if(aux->size == WordSize)
 				{
-					printf("Já contém palavra c %d caracteres c/ %d" , aux->size, WordSize);
 					//Já existe palavra c/ este tamanho
 					aux->fAbsolute = aux->fAbsolute +1;
-
 					added = 1;
 				}
-			
 		}
 		if(added==0)
 		{
 			aux->next  = tmp;
 		}
-		
 	}
 	
 	return lst;
@@ -438,17 +450,6 @@ void quit()
 }
 
 /* 
-	Função que calcula Frequência Relativa de cada Tamanho de palavra
-
- */
-
-float getMedianaofList (WordSizeList * lst, float media)
-{
-	int counter;
-	for 
-}
-
-/* 
 	Função que calcula a moda da lista
 	E a Média
 */
@@ -461,14 +462,15 @@ void getMedidasofList(WordSizeList * lst )
 	int total=0;
 	int moda = 0;
 	int maior = 0;
+	
 	for(aux = lst; aux; aux= aux->next)
 	{
-		if(aux->fAbsolute > maior)
+		if(aux->size > maior)
 		{
 			moda = aux->size;
 		}
 		total = total + 1;
-		soma = soma + (aux->fAbsolute * size ) ;
+		soma = soma + (aux->fAbsolute * aux->size ) ;
 
 	}
 
@@ -480,8 +482,12 @@ void getMedidasofList(WordSizeList * lst )
 	}
 	else
 	{
-		printf("A moda é de %d\n(%d) caracteres por palavra", moda, moda);
-		printf("A média é de %f caracteres por palavra\n", media );
+		// calcula desvio padrão
+		float dp;
+		dp = sqrt((total*total) / 2 );
+		printf("\n\nO desvio padrão é de %f", dp );
+		printf("\nA moda é de %d\n", moda);
+		printf("\nA média é de %f caracteres por palavra\n", media );
 
 	}
 }
@@ -501,13 +507,28 @@ void WordSizesRelativeFrequencies( WordSizeList * lst, int size )
 
 }
 
+
+
 int main(void)
 {
 	WordsList* MyWordList = NULL;
 	ThirdRowWords*  FrequencyList = NULL;
 	WordSizeList * WordSizeFrequencies = NULL;
-	int choice = 6, size;
+	int choice = 899, size;
+	
+	printf("\n Bem-Vindo à sua Ferramenta de interpretação de Palavras\n");
+	SelectFile();
 
+	printf("\nImportando palavras de %s...\n",filename);
+	MyWordList = usewordsList (MyWordList);
+	FrequencyList = ThirdColFrequencies(MyWordList,FrequencyList);
+	size = getSizeOfList(FrequencyList);
+	//printf("\nA lista tem %i categorias.", size);
+	//Depois de ter a lista c/ Frequências Absolutas vai calcular Frequência Relativa p/ cada uma das categorias
+	CalcRelativeFrequencies(FrequencyList, size);
+	WordSizeFrequencies = getWordsSize(MyWordList, WordSizeFrequencies);
+	size = getWordListSize(WordSizeFrequencies);
+	WordSizesRelativeFrequencies( WordSizeFrequencies, size);
 	do {
 		choice = menu();
 
@@ -516,38 +537,23 @@ int main(void)
 				quit();
 				break;
 			case 1:
-				MyWordList = usewordsList (MyWordList);
-				break;
-			case 2:
 				listWords(MyWordList);
 				break;
-			case 3:
-
-				FrequencyList = ThirdColFrequencies(MyWordList,FrequencyList);
-				
-				size = getSizeOfList(FrequencyList);
-				//printf("\nA lista tem %i categorias.", size);
-				//Depois de ter a lista c/ Frequências Absolutas vai calcular Frequência Relativa p/ cada uma das categorias
-				CalcRelativeFrequencies(FrequencyList, size);
+			case 2:
 				//CalcCumulatedFrequencies(FrequencyList,);
 				printf("\nOcorrências de Categorias das Palavras no Texto:\n");
 				//printf("\nCategoria \t F. Absoluta \t F. Relativa \t F. Acumulada \t\n");
 				list_frequencies(FrequencyList);
-				printf("\nTerminou função...\n\n");
 				break;
-			case 4:
-				WordSizeFrequencies = getWordsSize(MyWordList, WordSizeFrequencies);
-
-				size = getWordListSize(WordSizeFrequencies);
-				
-				WordSizesRelativeFrequencies( WordSizeFrequencies, size);
-			printf("\nOcorrências de Tamanhos das Palavras (Originais) no Text \n");
+			case 3:
+				printf("\nOcorrências de Tamanhos das Palavras (Originais) no Text \n");
 				List_WordSizesFrequencies(WordSizeFrequencies);
 				//Criar Função q pega nos valores e calcula o desvio padrão
 				// A F. Relativa aCumulada é igual ao cumulatedForWordSizes + f_relativa 
 				//Falta calcular e apresentar o desvio padrão
 				break;
-			case 5:
+				break;
+			case 4:
 				/*
 					Calcular Média, Moda e Mediana dos Tamanhos das Palavras
 
@@ -556,14 +562,25 @@ int main(void)
 				/* terminar Função da mediana
 					WordsizeFrequencies deve estar ordenada!
 					Bem como FrequencyList
-					addtoWordsSizesFrequencyList
+					
 					Devia garantir que a lista fica criada de forma ordenada...
 				 */
-				getMedianaofList(WordSizeFrequencies);
-				getMediana(WordSizeFrequencies);
+				//getMedianaofList(WordSizeFrequencies);
+				//getMediana(WordSizeFrequencies);
 				//Opção 5
+			case 5:
+				
+				
 
 			break;
+			case 6:
+			 
+			 break;
+
+			case 7:
+
+				break;
+		
 
 		}
 
